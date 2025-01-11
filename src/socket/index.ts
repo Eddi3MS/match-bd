@@ -33,13 +33,13 @@ export async function verifyToken(input: string) {
     throw new Error('Invalid or expired token')
   }
 }
-
+/* 
 app.use(
   cors({
     credentials: true,
     origin: process.env.ALLOWED_ORIGIN as string,
   })
-)
+) */
 
 const server = http.createServer(app)
 
@@ -58,7 +58,7 @@ io.use(async (socket: CustomSocket, next) => {
     const cookies = socket.handshake.headers.cookie
     if (!cookies) throw new Error('Missing credentials')
 
-    const sessionCookie = cookie.parse(cookies)?.['session']
+    const sessionCookie = cookie.parse(cookies)?.['io']
     if (!sessionCookie) throw new Error('Session cookie not found')
 
     const session = await verifyToken(sessionCookie)
