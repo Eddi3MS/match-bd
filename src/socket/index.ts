@@ -37,7 +37,7 @@ export async function verifyToken(input: string) {
 app.use(
   cors({
     credentials: true,
-    origin: [process.env.ALLOWED_ORIGIN as string],
+    origin: process.env.ALLOWED_ORIGIN as string,
   })
 )
 
