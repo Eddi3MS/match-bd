@@ -33,13 +33,13 @@ export async function verifyToken(input: string) {
     throw new Error('Invalid or expired token')
   }
 }
-/* 
+
 app.use(
   cors({
     credentials: true,
     origin: process.env.ALLOWED_ORIGIN as string,
   })
-) */
+)
 
 const server = http.createServer(app)
 
@@ -55,13 +55,10 @@ const users = new Map()
 
 io.use(async (socket: CustomSocket, next) => {
   try {
-    const cookies = socket.handshake.headers.cookie
-    if (!cookies) throw new Error('Missing credentials')
+    const token = socket.handshake.headers.authorization
+    if (!token) throw new Error('Missing credentials')
 
-    const sessionCookie = cookie.parse(cookies)?.['io']
-    if (!sessionCookie) throw new Error('Session cookie not found')
-
-    const session = await verifyToken(sessionCookie)
+    const session = await verifyToken(token)
 
     // Attach the user information to the socket object for later use
     socket.user = session.user
