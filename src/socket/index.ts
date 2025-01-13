@@ -73,8 +73,9 @@ io.use(async (socket: CustomSocket, next) => {
 // When a user connects to the server
 io.on('connection', async (socket: CustomSocket) => {
   users.set(socket.user!.id, socket.id)
+  io.emit('online', Array.from(users.keys()))
 
-  socket.emit('online', socket.user!.id)
+  console.log('🚀 ~ io ~ conectados:', Array.from(users.keys()))
 
   socket.on('send_message', ({ recipientId, conversation }) => {
     const recipientSocketId = users.get(recipientId)
@@ -90,7 +91,7 @@ io.on('connection', async (socket: CustomSocket) => {
     for (const [userId, socketId] of users.entries()) {
       if (socketId === socket.id) {
         users.delete(userId)
-        socket.emit('offline', userId)
+        io.emit('online', Array.from(users.keys()))
 
         console.log(`${userId} removed from users map`)
         break
