@@ -49,6 +49,7 @@ const io = new Server(server, {
     origin: process.env.ALLOWED_ORIGIN as string,
     methods: ['GET', 'POST', 'OPTIONS'],
   },
+  transports: ['websocket', 'polling'],
 })
 
 const users = new Map()
