@@ -1,9 +1,8 @@
-import { Server, Socket as DefaultSocket } from 'socket.io'
-import http from 'http'
-import express from 'express'
 import cors from 'cors'
-import * as cookie from 'cookie'
+import express from 'express'
+import http from 'http'
 import { jwtVerify } from 'jose'
+import { Socket as DefaultSocket, Server } from 'socket.io'
 
 interface UserPayload {
   id: string
@@ -41,6 +40,10 @@ app.use(
   })
 )
 
+// Middlewares
+app.use(express.json({ limit: '50mb' }))
+app.use(express.urlencoded({ extended: true }))
+
 const server = http.createServer(app)
 
 const io = new Server(server, {
@@ -50,6 +53,8 @@ const io = new Server(server, {
     methods: ['GET', 'POST', 'OPTIONS'],
   },
   transports: ['websocket', 'polling'],
+  pingInterval: 20000,
+  pingTimeout: 40000,
 })
 
 const users = new Map()
@@ -101,4 +106,4 @@ io.on('connection', async (socket: CustomSocket) => {
   })
 })
 
-export { io, server, app }
+export { app, io, server }
