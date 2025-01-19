@@ -53,8 +53,6 @@ const io = new Server(server, {
     methods: ['GET', 'POST', 'OPTIONS'],
   },
   transports: ['websocket', 'polling'],
-  pingInterval: 20000,
-  pingTimeout: 40000,
 })
 
 const users = new Map()
@@ -78,31 +76,40 @@ io.use(async (socket: CustomSocket, next) => {
 
 // When a user connects to the server
 io.on('connection', async (socket: CustomSocket) => {
-  users.set(socket.user!.id, socket.id)
+  const userId = socket.user!.id
+  if (!users.has(userId)) {
+    users.set(userId, []);
+  }
+  
+  users.get(userId).push(socket.id);
+
   io.emit('online', Array.from(users.keys()))
 
-  console.log('🚀 ~ io ~ conectados:', Array.from(users.keys()))
+  console.log('🚀 ~ io ~ conectados: userIds ->', Array.from(users.keys()))
 
   socket.on('send_message', ({ recipientId, conversation }) => {
-    const recipientSocketId = users.get(recipientId)
+    const recipientSocketIds = users.get(recipientId) || []
 
-    if (recipientSocketId) {
-      io.to(recipientSocketId).emit('receive_message', conversation)
-    }
+    recipientSocketIds.forEach((socketId:string) => {
+      if (socketId) {
+        io.to(socketId).emit('receive_message', conversation)
+      }
+    });
+
   })
 
   socket.on('disconnect', () => {
-    console.log('User disconnected:', socket.id)
-
-    for (const [userId, socketId] of users.entries()) {
-      if (socketId === socket.id) {
-        users.delete(userId)
-        io.emit('online', Array.from(users.keys()))
-
-        console.log(`${userId} removed from users map`)
-        break
-      }
+    const sockets = users.get(userId) || [];
+    const updatedSockets = sockets.filter((id:string) => id !== socket.id);
+    if (updatedSockets.length > 0) {
+      users.set(userId, updatedSockets);
+    } else {
+      users.delete(userId);
     }
+
+    io.emit('online', Array.from(users.keys()))
+
+    console.log('User disconnected: socketId ->', socket.id)
   })
 })
 
