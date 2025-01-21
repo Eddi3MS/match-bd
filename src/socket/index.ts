@@ -5,7 +5,7 @@ import { jwtVerify } from 'jose'
 import { Socket as DefaultSocket, Server } from 'socket.io'
 
 interface UserPayload {
-  id: string
+  profileId: string
 }
 
 interface CustomSocket extends DefaultSocket {
@@ -23,7 +23,7 @@ export async function verifyToken(input: string) {
     })
     return payload as {
       user: {
-        id: string
+        profileId: string
       }
       expires: Date
     }
@@ -76,12 +76,19 @@ io.use(async (socket: CustomSocket, next) => {
 
 // When a user connects to the server
 io.on('connection', async (socket: CustomSocket) => {
-  const userId = socket.user!.id
-  if (!users.has(userId)) {
-    users.set(userId, []);
+  const userId = socket.user?.profileId
+
+  if (!userId) {
+    // fazer algo
+
+    return
   }
-  
-  users.get(userId).push(socket.id);
+
+  if (!users.has(userId)) {
+    users.set(userId, [])
+  }
+
+  users.get(userId).push(socket.id)
 
   io.emit('online', Array.from(users.keys()))
 
@@ -90,21 +97,20 @@ io.on('connection', async (socket: CustomSocket) => {
   socket.on('send_message', ({ recipientId, conversation }) => {
     const recipientSocketIds = users.get(recipientId) || []
 
-    recipientSocketIds.forEach((socketId:string) => {
+    recipientSocketIds.forEach((socketId: string) => {
       if (socketId) {
         io.to(socketId).emit('receive_message', conversation)
       }
-    });
-
+    })
   })
 
   socket.on('disconnect', () => {
-    const sockets = users.get(userId) || [];
-    const updatedSockets = sockets.filter((id:string) => id !== socket.id);
+    const sockets = users.get(userId) || []
+    const updatedSockets = sockets.filter((id: string) => id !== socket.id)
     if (updatedSockets.length > 0) {
-      users.set(userId, updatedSockets);
+      users.set(userId, updatedSockets)
     } else {
-      users.delete(userId);
+      users.delete(userId)
     }
 
     io.emit('online', Array.from(users.keys()))
