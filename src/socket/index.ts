@@ -108,6 +108,16 @@ io.on('connection', async (socket: CustomSocket) => {
     })
   })
 
+  socket.on('force_reload', ({ userProfileId }) => {
+    const recipientSocketIds = users.get(userProfileId) || []
+
+    recipientSocketIds.forEach((socketId: string) => {
+      if (socketId) {
+        io.to(socketId).emit('force_reload')
+      }
+    })
+  })
+
   socket.on('disconnect', () => {
     const sockets = users.get(userId) || []
     const updatedSockets = sockets.filter((id: string) => id !== socket.id)
