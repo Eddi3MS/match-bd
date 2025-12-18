@@ -36,7 +36,7 @@ export async function verifyToken(input: string) {
 app.use(
   cors({
     credentials: true,
-    origin: process.env.ALLOWED_ORIGIN as string,
+    origin: process.env.ALLOWED_ORIGINS?.split(',').map((o) => o.trim()) ?? [],
   })
 )
 
@@ -53,7 +53,7 @@ const server = http.createServer(app)
 const io = new Server(server, {
   cors: {
     credentials: true,
-    origin: process.env.ALLOWED_ORIGIN as string,
+    origin: process.env.ALLOWED_ORIGINS?.split(',').map((o) => o.trim()) ?? [],
     methods: ['GET', 'POST', 'OPTIONS'],
   },
   transports: ['websocket', 'polling'],
@@ -63,22 +63,20 @@ const users = new Map()
 
 io.use(async (socket: CustomSocket, next) => {
   try {
-    const token = socket.handshake.headers.authorization
+    const token = socket.handshake.auth.token
     if (!token) throw new Error('Missing credentials')
 
     const session = await verifyToken(token)
 
-    // Attach the user information to the socket object for later use
     socket.user = session.user
 
-    next() // Allow the connection
+    next()
   } catch (err: any) {
     console.error('Authentication error:', err.message)
-    next(new Error('Authentication failed')) // Reject the connection
+    next(new Error('Authentication failed'))
   }
 })
 
-// When a user connects to the server
 io.on('connection', async (socket: CustomSocket) => {
   const userId = socket.user?.profileId
 
@@ -95,8 +93,6 @@ io.on('connection', async (socket: CustomSocket) => {
   users.get(userId).push(socket.id)
 
   io.emit('online', Array.from(users.keys()))
-
-  console.log('🚀 ~ io ~ conectados: userIds ->', Array.from(users.keys()))
 
   socket.on('send_message', ({ recipientId, conversation }) => {
     const recipientSocketIds = users.get(recipientId) || []
