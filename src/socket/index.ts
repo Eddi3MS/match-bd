@@ -61,6 +61,20 @@ const io = new Server(server, {
 
 const users = new Map()
 
+/* origin */
+io.use((socket, next) => {
+  const origin = socket.handshake.headers.origin
+  const allowedOrigins =
+    process.env.ALLOWED_ORIGINS?.split(',').map((o) => o.trim()) ?? []
+
+  if (!origin || !allowedOrigins.includes(origin)) {
+    return next(new Error('Origin not allowed'))
+  }
+
+  next()
+})
+
+/* auth */
 io.use(async (socket: CustomSocket, next) => {
   try {
     const token = socket.handshake.auth.token
