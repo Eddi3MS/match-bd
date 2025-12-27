@@ -64,8 +64,10 @@ const users = new Map()
 /* origin */
 io.use((socket, next) => {
   const origin = socket.handshake.headers.origin
+  console.log('🚀 ~ origin:', origin)
   const allowedOrigins =
     process.env.ALLOWED_ORIGINS?.split(',').map((o) => o.trim()) ?? []
+  console.log('🚀 ~ allowedOrigins:', allowedOrigins)
 
   if (!origin || !allowedOrigins.includes(origin)) {
     return next(new Error('Origin not allowed'))
